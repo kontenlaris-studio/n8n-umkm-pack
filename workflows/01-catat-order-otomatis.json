@@ -1,0 +1,201 @@
+{
+  "name": "UMKM 1 — Catat Order Otomatis",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 1 — Catat Order Otomatis\nOrder masuk lewat webhook (form order / gateway WhatsApp) → tersimpan rapi ke Google Sheets → pemilik toko dapat notifikasi Telegram.\n\n**Setup:** sambungkan Google Sheets & Telegram, ganti ID sheet dan chat ID. Lihat PANDUAN.md.",
+        "height": 200,
+        "width": 520,
+        "color": 4
+      },
+      "id": "931c5215-cb7c-41ec-90ee-f60f689c6bf4",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "order-masuk",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "d7b26daa-27df-4e0e-a46b-1cf2c88fbd5a",
+      "name": "Webhook Order Masuk",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        300,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "tanggal",
+              "type": "string",
+              "value": "={{ $now.format('yyyy-MM-dd HH:mm') }}"
+            },
+            {
+              "id": "a2",
+              "name": "nama",
+              "type": "string",
+              "value": "={{ $json.nama }}"
+            },
+            {
+              "id": "a3",
+              "name": "telepon",
+              "type": "string",
+              "value": "={{ $json.telepon }}"
+            },
+            {
+              "id": "a4",
+              "name": "produk",
+              "type": "string",
+              "value": "={{ $json.produk }}"
+            },
+            {
+              "id": "a5",
+              "name": "jumlah",
+              "type": "number",
+              "value": "={{ $json.jumlah }}"
+            },
+            {
+              "id": "a6",
+              "name": "total",
+              "type": "number",
+              "value": "={{ $json.total }}"
+            },
+            {
+              "id": "a7",
+              "name": "status",
+              "type": "string",
+              "value": "BARU"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0d74f52b-66f5-49a0-b00a-32a310e2a33d",
+      "name": "Rapikan Data Order",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        520,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "GANTI_ID_SHEET",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Orders"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": []
+        },
+        "options": {}
+      },
+      "id": "3afbe4b2-0886-46f4-8b3c-ce9ee1f55d66",
+      "name": "Simpan ke Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        740,
+        240
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "GANTI_CHAT_ID",
+        "text": "=🛎️ Order baru!\n{{ $json.nama }} — {{ $json.produk }} x{{ $json.jumlah }}\nTotal: Rp{{ $json.total }}\nStatus: {{ $json.status }}",
+        "additionalFields": {}
+      },
+      "id": "dd8e1aa8-4a26-4467-9224-c6174c908d46",
+      "name": "Notifikasi Telegram Pemilik",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        240
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Order Masuk": {
+      "main": [
+        [
+          {
+            "node": "Rapikan Data Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rapikan Data Order": {
+      "main": [
+        [
+          {
+            "node": "Simpan ke Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simpan ke Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Notifikasi Telegram Pemilik",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "umkm"
+    },
+    {
+      "name": "order"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
